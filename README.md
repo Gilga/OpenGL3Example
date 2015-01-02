@@ -11,7 +11,7 @@ Following files must be in same directory where .exe is located:
 - vertex_shader.glsl
 - fragment_shader.glsl
 
-External Libaries
+External Libraries
 ==============
 
 - glew32
