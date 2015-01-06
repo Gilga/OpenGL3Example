@@ -32,8 +32,6 @@ void plane(int mode = 0)
 	{
 		// CREATE PLANE
 
-		GLuint vertex_data_Size = 0;
-
 		GLfloat vertex_data[VERTEX_DATA_SIZE] =	{
 			/*(*/ -1, -1, 0, /*)*/ 
 			/*(*/ 1, -1, 0, /*)*/ 
@@ -41,7 +39,7 @@ void plane(int mode = 0)
 			/*(*/ 1, 1, 0 /*)*/ 
 		};
 
-		GLuint index_data[INDEX_DATA_SIZE] = { 0, 1, 2, 3 };
+		GLuint index_data[INDEX_DATA_SIZE] = { 0, 1, 2, 3 }; // GL_TRIANGLE_STRIP
 
 		glGenVertexArrays(1, &plane_id);
 		glGenBuffers(2, plane_buffer_id);

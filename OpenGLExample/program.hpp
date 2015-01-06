@@ -31,6 +31,8 @@ struct ShaderProgram
 	void read();
 	void compile();
 
+	bool isLinked();
+
 	void print(const char* msg, bool error=false);
 	std::string debugInfo();
 
@@ -39,7 +41,7 @@ struct ShaderProgram
 	void uniform(const char *name, float value);
 	void uniform(const char *name, unsigned int type, unsigned int count, const float* value);
 
-	ShaderProgram() : vertex_shader(GL_VERTEX_SHADER), fragment_shader(GL_FRAGMENT_SHADER)
+	ShaderProgram(const char* name) : name(name), vertex_shader(GL_VERTEX_SHADER), fragment_shader(GL_FRAGMENT_SHADER)
 	{
 		id = 0;
 		linked = GL_FALSE;
@@ -47,6 +49,8 @@ struct ShaderProgram
 		used = false;
 	};
 };
+
+bool ShaderProgram::isLinked() { return (linked == GL_TRUE); }
 
 std::string ShaderProgram::debugInfo()
 {
@@ -100,7 +104,7 @@ void ShaderProgram::remove()
 
 void ShaderProgram::use()
 {
-	if (!created || used) return;
+	if (!created || !isLinked() || used) return;
 	print("use");
 	glUseProgram(id);
 	printGLError("glUseProgram");

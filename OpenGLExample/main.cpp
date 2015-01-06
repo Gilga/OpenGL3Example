@@ -57,8 +57,23 @@ bool ROTATE_UP = false;
 bool ROTATE_DOWN = false;
 
 // -------------------------------------------------------------------------------------------------
+std::string convertToStr(unsigned int value)
+{
+	std::ostringstream s;
+	s << value;
+	return s.str();
+}
 
+std::string convertToStr(double value)
+{
+	std::ostringstream s;
+	s << value;
+	return s.str();
+}
+
+// -------------------------------------------------------------------------------------------------
 bool printGLError(const char *title, const bool nomsg = false, const bool noloop = false);
+// -------------------------------------------------------------------------------------------------
 
 #include "init.hpp"
 #include "plane.hpp"
@@ -71,6 +86,8 @@ void showFPS(bool reset=false);
 void reload();
 void showWireframe();
 
+// -------------------------------------------------------------------------------------------------
+// CALLBACKS
 // -------------------------------------------------------------------------------------------------
 
 void windowFocus_callback(GLFWwindow *window, int focused) { window_focus = (focused == GL_TRUE); }
@@ -138,6 +155,28 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+void callbacks()
+{
+	// callbacks
+	glfwSetWindowFocusCallback(window, windowFocus_callback);
+	glfwSetKeyCallback(window, key_callback);
+	glfwSetMouseButtonCallback(window, mouseButton_callback);
+	glfwSetScrollCallback(window, mouseWheel_callback);
+	glfwSetCursorPosCallback(window, mousePos_callback);
+
+	// Ensure we can capture the escape key being pressed below
+	//glfwSetInputMode(window,GLFW_STICKY_KEYS,1);  //glfwEnable
+	glfwSetCursorPos(window, WINDOW_WIDTH * .5, WINDOW_HEIGHT * .5);
+}
+
+// -------------------------------------------------------------------------------------------------
+void showFPS(bool reset);
+void statics();
+void static_uniforms();
+void dynamic_uniforms();
+void draw_objects();
+// -------------------------------------------------------------------------------------------------
+
 bool run()
 {
 	glfwPollEvents(); // poll events
@@ -157,23 +196,41 @@ void clear()
 	printGLError("glClear");
 }
 
-std::string convertToStr(unsigned int value)
+void render()
 {
-	std::ostringstream s;
-	s << value;
-	return s.str();
+	if (INIT_FAILED) return;
+
+	callbacks(); // glfw callbacks
+	statics(); // static options
+	plane(1); // create plane
+
+	reload(); // reload shaders
+
+	while (run())
+	{
+		if (!window_focus || pause) // when window has no focus or pause
+		{
+			yield(); // free some work from CPU
+			continue;
+		}
+
+		draw_objects();
+
+		swap(); // swap images in background
+		clear(); // clear the context
+		showFPS(); // show FPS
+	}
+
+	plane(-1);
 }
 
-std::string convertToStr(double value)
-{
-	std::ostringstream s;
-	s << value;
-	return s.str();
-}
+// -------------------------------------------------------------------------------------------------
+// FPS
+// -------------------------------------------------------------------------------------------------
 
 double lastFrameTime = 0;
 double frames = 0;
-double max_frames[] = {0,0};
+double max_frames[] = { 0, 0 };
 
 void showFPS(bool reset)
 {
@@ -186,15 +243,15 @@ void showFPS(bool reset)
 		double fpms = frames > 0 ? (1000. / frames) : 0;
 
 		// MAX
-		if(max_frames[0] < frames)
+		if (max_frames[0] < frames)
 		{
 			max_frames[0] = frames;
 			max_frames[1] = fpms;
 		}
 
-		if(reset)
+		if (reset)
 		{
-			 // reset frames
+			// reset frames
 			lastFrameTime = 0;
 			frames = 0;
 			fpms = 0;
@@ -203,8 +260,8 @@ void showFPS(bool reset)
 		}
 
 		std::string title = std::string(WINDOW_NAME)
-		+ " | FPS " + convertToStr(unsigned int(frames)) + " [" + convertToStr(unsigned int(max_frames[0])) + "]"
-		+ " | FPMS " + convertToStr(fpms)+ " [" + convertToStr(max_frames[1]) + "]";
+			+ " | FPS " + convertToStr(unsigned int(frames)) + " [" + convertToStr(unsigned int(max_frames[0])) + "]"
+			+ " | FPMS " + convertToStr(fpms) + " [" + convertToStr(max_frames[1]) + "]";
 
 		glfwSetWindowTitle(window, title.c_str());
 
@@ -212,10 +269,12 @@ void showFPS(bool reset)
 		frames = 0;
 		lastFrameTime = currentFrameTime;
 	}
-	
+
 	//Sleep(1); // 1ms
 	//Sleep(1000.0 / 60); // 60 FPS
 }
+
+// -------------------------------------------------------------------------------------------------
 
 void info()
 {
@@ -257,55 +316,16 @@ void info()
 	}
 }
 
-void callbacks()
+// -------------------------------------------------------------------------------------------------
+
+ShaderProgram program("Test");
+
+void draw_objects()
 {
-	// callbacks
-	glfwSetWindowFocusCallback(window, windowFocus_callback);
-	glfwSetKeyCallback(window, key_callback);
-	glfwSetMouseButtonCallback(window, mouseButton_callback);
-	glfwSetScrollCallback(window, mouseWheel_callback);
-	glfwSetCursorPosCallback(window, mousePos_callback);
-
-	// Ensure we can capture the escape key being pressed below
-	//glfwSetInputMode(window,GLFW_STICKY_KEYS,1);  //glfwEnable
-	glfwSetCursorPos(window, WINDOW_WIDTH * .5, WINDOW_HEIGHT * .5);
+	if (!program.isLinked()) return;
+	dynamic_uniforms(); // update some uniforms
+	plane(); // render plane
 }
-
-void statics();
-void static_uniforms();
-void dynamic_uniforms();
-
-void render()
-{
-	if (INIT_FAILED) return;
-
-	callbacks();
-	statics();
-	plane(1);
-
-	reload();
-
-	while (run())
-	{
-		if (!window_focus || pause)
-		{
-			yield();
-			continue;
-		}
-
-		dynamic_uniforms();
-
-		plane(); // render plane
-
-		swap();
-		clear();
-		showFPS();
-	}
-
-	plane(-1);
-}
-
-ShaderProgram program;
 
 void reload()
 {
@@ -365,11 +385,13 @@ void dynamic_uniforms()
 
 	lastTime = currentTime;
 }
+// -------------------------------------------------------------------------------------------------
 
 int main(int argc, char** argv)
 {
 	init();
 	info();
+	printf("HINT: Shader files must be in same location where this application is.\n");
 	render();
 	return INIT_FAILED ? -1 : 0;
 }
