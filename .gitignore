@@ -14,7 +14,7 @@ x64/
 x86/
 x86-64/
 build/
-[Bb]in/
+#[Bb]in/
 [Oo]bj/
 [Ww]in32/
 [Ww]in64/
