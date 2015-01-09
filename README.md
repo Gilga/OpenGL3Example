@@ -15,7 +15,7 @@ External Libraries
 ==============
 
 Libraries in lib directory were build for Windows 7 (x86).<br />
-Visual Studio Options: mostly `/MD`
+Visual Studio Options: mostly with `/MD`
 
 - glew32
 - glfw3
