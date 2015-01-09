@@ -14,6 +14,10 @@ Following files must be in same directory where .exe is located:
 External Libraries
 ==============
 
+Libraries in lib directory were build for Windows 7 (x86)
+Visual Studio Options: mostly /MD
+
 - glew32
 - glfw3
 - glm
+
