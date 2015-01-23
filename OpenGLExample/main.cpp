@@ -33,6 +33,10 @@
 #define WINDOW_HALF_WIDTH WINDOW_WIDTH * 0.5f
 #define WINDOW_HALF_HEIGHT WINDOW_HEIGHT * 0.5f
 
+#define VERTEX_SHADER "vertex_shader.glsl"
+#define FRAGMENT_SHADER "fragment_shader.glsl"
+#define FRAGMENT_SHADER2 "fragment_shader2.glsl"
+
 // -------------------------------------------------------------------------------------------------
 
 GLFWwindow* window = NULL;
@@ -81,6 +85,8 @@ bool printGLError(const char *title, const bool nomsg = false, const bool noloop
 #include "camera.hpp"
 #include "matrix_transformations.hpp"
 
+ShaderProgram program("Test");
+
 // -------------------------------------------------------------------------------------------------
 void showFPS(bool reset=false);
 void reload();
@@ -126,6 +132,11 @@ void mouseButton_callback(GLFWwindow *window, int button, int action, int mods)
 
 }
 
+void reloadShader()
+{
+	pause = true; showFPS(true); reload(); pause = false;
+}
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	bool press = (action == GLFW_PRESS);
@@ -137,8 +148,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		{
 			if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, GL_TRUE);
 			if (key == GLFW_KEY_PAUSE) { showFPS(true); pause = !pause; }
-			if (key == GLFW_KEY_F5) { pause=true; showFPS(true); reload(); pause=false; }
+			if (key == GLFW_KEY_F5) { reloadShader(); }
 			if (key == GLFW_KEY_F1) { showWireframe(); }
+			if (key == GLFW_KEY_1 || key == GLFW_KEY_KP_1) { program.fragment_shader.url = FRAGMENT_SHADER; reloadShader(); }
+			if (key == GLFW_KEY_2 || key == GLFW_KEY_KP_2) { program.fragment_shader.url = FRAGMENT_SHADER2; reloadShader(); }
 		}
 
 		if (key == GLFW_KEY_W) FORWARD = press ? true : false;
@@ -318,8 +331,6 @@ void info()
 
 // -------------------------------------------------------------------------------------------------
 
-ShaderProgram program("Test");
-
 void draw_objects()
 {
 	if (!program.isLinked()) return;
@@ -329,6 +340,13 @@ void draw_objects()
 
 void reload()
 {
+	printf("\n[ Control ]\n");
+	printf("Fragment Shader (1)	: 1\n");
+	printf("Fragment Shader (2)	: 2\n");
+	printf("Shader Reload		: F5\n");
+	printf("WireFrame (On/Off)	: F1\n");
+	printf("Camera Movement		: W, A, S, D, Space, Left Control(STRG)\n");
+	printf("Camera View		: Arrows or Mouse Right Key + Mouse Move\n");
 	printf("\n----------\nReload\n----------\n\n");
 	program.load();
 	program.use();
@@ -356,8 +374,8 @@ void statics()
 	glClearColor(.75f, .75f, .75f, 1.f);
 	printGLError("glClearColor");
 
-	program.vertex_shader.url = "vertex_shader.glsl";
-	program.fragment_shader.url = "fragment_shader.glsl";
+	program.vertex_shader.url = VERTEX_SHADER;
+	program.fragment_shader.url = FRAGMENT_SHADER;
 }
 
 void static_uniforms()
@@ -382,13 +400,33 @@ void dynamic_uniforms()
 
 	program.uniform("iGlobalTime", (float)currentTime);
 	program.uniform("iMVP", USE_MATRIX4x4, 1, &MVP[0][0]);
+	program.uniform("iModel", USE_MATRIX4x4, 1, &Model[0][0]);
+	program.uniform("iView", USE_MATRIX4x4, 1, &View[0][0]);
 
 	lastTime = currentTime;
 }
 // -------------------------------------------------------------------------------------------------
 
-int main(int argc, char** argv)
+void initConsole()
 {
+	if (!AllocConsole()) return;
+
+	FILE* fileIn;
+	FILE* fileOut;
+	FILE* fileErr;
+
+	freopen_s(&fileIn, "CONIN$", "r", stdin);
+	freopen_s(&fileOut, "CONOUT$", "w", stdout);
+	freopen_s(&fileErr, "CONOUT$", "w", stderr);
+
+	SetConsoleTitle(TEXT(WINDOW_NAME));
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+}
+
+
+int WINAPI __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPWSTR cmdLine, int cmdShow)
+{
+	initConsole();
 	init();
 	info();
 	printf("HINT: Shader files must be in same location where this application is.\n");
